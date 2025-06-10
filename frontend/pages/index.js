@@ -14,7 +14,7 @@ export default function Home() {
   const [rootNodeId, setRootNodeId] = useState(null);
   
   // First, try to get conversations
-  const { data: conversations } = useSWR('/api_proxy/conversations', fetcher);
+  const { data: conversations } = useSWR('/api/proxy/conversations', fetcher);
   
   // Use the first conversation as root if available
   useEffect(() => {
@@ -24,13 +24,13 @@ export default function Home() {
   }, [conversations, rootNodeId]);
 
   const { data: graphData, error } = useSWR(
-    rootNodeId ? `/api_proxy/nodes/${rootNodeId}/children?depth=2` : null,
+    rootNodeId ? `/api/proxy/nodes/${rootNodeId}/children?depth=2` : null,
     fetcher
   );
 
   const createSampleData = async () => {
     try {
-      const response = await fetch('/api_proxy/seed', {
+      const response = await fetch('/api/proxy/seed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
