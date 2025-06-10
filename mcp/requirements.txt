@@ -1,5 +1,8 @@
-fastapi[all]
-uvicorn
-pydantic
-starlette
+fastapi>=0.68.0
+uvicorn>=0.15.0
+pydantic>=1.8.0
+httpx>=0.24.0
+pyyaml>=6.0.0
+redis>=4.5.0
+starlette>=0.14.0
 requests 

@@ -1,7 +1,99 @@
+################################################################################
+#  Graph-Memory MCP Gateway – Live-logging spec
+#
+#  Loaded by mcp/serve.py at start-up:
+#      uvicorn serve:app --host 0.0.0.0 --port 3911 --reload
+#
+#  Every "tool" here is exposed to any LLM that can speak the MCP protocol.
+################################################################################
 
+# --------------------------------------------------------------------------- #
+# GLOBAL SETTINGS
+# --------------------------------------------------------------------------- #
+meta:
+  gateway_name: "graph-memory-gateway"
+  backend_base_url: "http://api:8000"           # inside Docker network
+  auth: "none"                                  # JWT / header support later
+  cors_allowed_origins: ["*"]
+  # Optional: broadcast graph updates over WebSocket → UI auto-refresh
+  websockets:
+    enabled: true
+    outbox_topic: "graph-events"                # Redis pub/sub channel
+
+# --------------------------------------------------------------------------- #
+# TOOL DEFINITIONS
+# --------------------------------------------------------------------------- #
 tools:
+
+  # 1. LIVE MESSAGE INGEST  -------------------------------------------------- #
+  add_message:
+    description: >
+      Persist a new chat message into the Knowledge Graph.
+      Must include a conversation_id, role (user|assistant), and text content.
+    http:
+      method: POST
+      path: /messages
+    input_schema:
+      type: object
+      required: [conversation_id, role, text]
+      properties:
+        conversation_id:
+          type: string
+          description: UUID returned by the /conversations endpoint
+        role:
+          type: string
+          enum: [user, assistant, system]
+          description: Author of the message
+        text:
+          type: string
+          description: The full body of the chat message
+    # Optional post-processing: publish an event so UI can receive updates
+    on_success:
+      broadcast:
+        topic: graph-events
+        payload_template: |
+          {
+            "event": "new_message",
+            "conversation_id": "{{ conversation_id }}",
+            "message_role": "{{ role }}",
+            "text_snippet": "{{ text[:60] }}"
+          }
+
+  # 2. READ-ONLY GRAPH TOOLS (unchanged)  ----------------------------------- #
   get_children:
-    description: "Return direct child nodes and links"
-    params:
-      node_id: string
-      depth: int
+    description: Expand a node by fetching its direct children + edges.
+    http:
+      method: GET
+      path: /nodes/{node_id}/children
+    input_schema:
+      type: object
+      required: [node_id]
+      properties:
+        node_id: { type: string }
+        depth:
+          type: integer
+          default: 1
+          minimum: 1
+          maximum: 3
+
+  search_graph:
+    description: Semantic search across nodes (embeddings or text match).
+    http:
+      method: GET
+      path: /search
+    input_schema:
+      type: object
+      required: [q]
+      properties:
+        q:  { type: string }
+        k:  { type: integer, default: 10, minimum: 1, maximum: 50 }
+
+# --------------------------------------------------------------------------- #
+# OPTIONAL HOOKS (error handling, rate limits, etc.)
+# --------------------------------------------------------------------------- #
+middleware:
+  logging:
+    level: "INFO"           # DEBUG for verbose
+  rate_limit:
+    window_seconds: 60
+    max_calls_per_window: 240
