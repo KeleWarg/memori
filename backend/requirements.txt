@@ -1,0 +1,10 @@
+
+fastapi[all]
+uvicorn
+py2neo==2021.2.4
+neo4j
+pydantic
+celery
+redis
+openai
+python-dotenv

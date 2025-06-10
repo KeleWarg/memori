@@ -1,0 +1,7 @@
+
+tools:
+  get_children:
+    description: "Return direct child nodes and links"
+    params:
+      node_id: string
+      depth: int
