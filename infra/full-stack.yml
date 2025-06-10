@@ -54,8 +54,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: graph-api
-    <<: *default-network
-    <<: *default-env
+    <<: [*default-network, *default-env]
     depends_on:
       - neo4j
       - redis
@@ -69,8 +68,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: graph-celery
-    <<: *default-network
-    <<: *default-env
+    <<: [*default-network, *default-env]
     depends_on:
       - api
       - redis
@@ -82,8 +80,7 @@ services:
       context: ./mcp
       dockerfile: Dockerfile
     container_name: graph-mcp
-    <<: *default-network
-    <<: *default-env
+    <<: [*default-network, *default-env]
     depends_on:
       - api
     ports:
@@ -96,8 +93,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: graph-web
-    <<: *default-network
-    <<: *default-env
+    <<: [*default-network, *default-env]
     depends_on:
       - api
     ports:
